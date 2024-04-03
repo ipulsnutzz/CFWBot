@@ -16,7 +16,6 @@ ip_api = os.getenv('IP_API')
 bot_token = os.getenv('BOT_TOKEN')
 account_id = os.getenv('ACCOUNT_ID')
 api_token = os.getenv('CLOUDFLARE_API_TOKEN')
-admin_user_id = os.getenv('ADMIN_USER_ID')
 bot = telebot.TeleBot(bot_token)
 user_states = {}
 users_directory = 'users'
@@ -28,28 +27,12 @@ proxy_state = False
 INPUT_NEW_API = 0
 
 @bot.message_handler(commands=['start'])
-def authorize(message):
-
-    if str(message.from_user.id) == str(admin_user_id):
-        print(f"Admin User ID: {admin_user_id}")
-        print(f"User ID: {message.from_user.id}")
-
-        send_welcome(message)
-    else:
-        unauthorized_message = "❌ Unauthorized access! You do not have permission to use this command."
-        bot.send_message(message.chat.id, unauthorized_message)
-
-
 def send_welcome(message):
 
     menu_markup = InlineKeyboardMarkup()
     add_user_button = InlineKeyboardButton("➕ Add User", callback_data="add_user")
     user_panel_button = InlineKeyboardButton("🔰 Users Panel", callback_data="user_panel")
-    subscriptions_button = InlineKeyboardButton("📋 Subscriptions ips", callback_data="subscriptions") 
-    proxy_txt_button = InlineKeyboardButton("📁CF Proxies", callback_data="proxy_list")
     menu_markup.add(add_user_button, user_panel_button)  
-    menu_markup.add(subscriptions_button)
-    menu_markup.add(proxy_txt_button)
     welcome_message = "Welcome to C-F-W Bot (v0.03)!\n ✌️ RISE AND FIGHT FOR FREEDOM ✌️ !\n "
     
     bot.send_message(message.chat.id, welcome_message, reply_markup=menu_markup)
@@ -165,9 +148,6 @@ def user_panel_cfw(call):
         button = InlineKeyboardButton("👤|" + name, callback_data=callback_data)
         keyboard.add(button)
 
-    change_all_button = InlineKeyboardButton("🆕 Proxy for USERS", callback_data="change_all_proxies")
-    keyboard.add(change_all_button)
-
     return_button = InlineKeyboardButton("🔙 Return", callback_data="return")
     keyboard.add(return_button)
     
@@ -207,7 +187,6 @@ def user_info_callback(call):
         message_text = f"<b>🔰USER INFO🔰</b>\n\n"
         message_text += f"👤 <b>Name:</b> {user_name}\n"
         message_text += f"🔑 <b>UUID:</b> {uuid}\n"
-        message_text += f"🌐 <b>IP:</b> {ip}\n"
         message_text += f"📡 <b>Subdomain:</b> {subdomain}\n\n"
         message_text += f"🔗tls: <code>{vless_link}</code>\n\n"
         message_text += f"🔗notls: <code>{nontls_config}</code>\n\n"
@@ -217,7 +196,7 @@ def user_info_callback(call):
         delete_button = InlineKeyboardButton("🗑️ Delete", callback_data=f"delete:{user_name}")
         qr_button = InlineKeyboardButton("🔲 QR", callback_data=f"qr:{user_name}")
         redeploy_button = InlineKeyboardButton("🔄 Redeploy", callback_data=f"redeploy:{user_name}")
-        change_proxy_button = InlineKeyboardButton("🆕 New Proxy", callback_data=f"newproxy:{user_name}")
+        change_proxy_button = InlineKeyboardButton("🆕 Change Proxy", callback_data=f"newproxy:{user_name}")
         return_button = InlineKeyboardButton("🔙 Return", callback_data="user_panel")
         keyboard.add(delete_button, qr_button)
         keyboard.add(change_proxy_button, redeploy_button)
@@ -391,13 +370,8 @@ def change_user_proxy(call):
         options = ips + proxies
 
         keyboard = InlineKeyboardMarkup()
-        for option in options:
-            keyboard.add(InlineKeyboardButton(option, callback_data=f"newproxy_for_user:{option}:{user_name}"))
 
-        return_button = InlineKeyboardButton("🔙 Return", callback_data="user_panel")
-        keyboard.add(return_button)
-
-        proxy_message = bot.send_message(call.message.chat.id, f"Current proxy for 👤 {user_name} is ➡️ {proxyip_from_db}\n\n Please select the new proxy IP from the list or send a new one:", reply_markup=keyboard)
+        proxy_message = bot.send_message(call.message.chat.id, f"Current proxy for 👤 {user_name} is ➡️ {proxyip_from_db}\n\n Masukan Proxy :", reply_markup=keyboard)
         proxy_message_id = proxy_message.message_id
         bot.register_next_step_handler(call.message, update_proxy_ip, user_name, connection, proxy_message_id)
 
@@ -677,8 +651,6 @@ def handle_filename(message):
         options = ips + proxies
 
         keyboard = InlineKeyboardMarkup()
-        for option in options:
-            keyboard.add(InlineKeyboardButton(option, callback_data=f"selected_ip:{option}"))
 
         if options:
             proxy_message = bot.send_message(message.chat.id, "Please select one of the following options or send a new Cloudflare Ip or Domain:", reply_markup=keyboard)
@@ -723,7 +695,7 @@ def handle_proxy(message):
     connection.commit()
     connection.close()
     user_states[message.from_user.id]['state'] = 'waiting_for_subdomain_or_worker_name'
-    bot.send_message(message.chat.id, "Please enter the new subdomain for your worker: \n ℹ️ example: subdomain.yourdomain.com \n\n ℹ️ℹ️ DO NOT enter domain that you DO NOT HAVE !")    
+    bot.send_message(message.chat.id, "Masukan Subdomain: \n\n ℹ️ contoh: contoh.saipul-bahri.my.id \n")    
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('selected_ip:'))
 def handle_selected_ip(call):
@@ -746,7 +718,7 @@ def handle_selected_ip(call):
     connection.commit()
     connection.close()
     user_states[call.from_user.id]['state'] = 'waiting_for_subdomain_or_worker_name'
-    bot.send_message(call.message.chat.id, "Please enter the new subdomain for your worker: \n ℹ️ example: subdomain.yourdomain.com \n\n ℹ️ℹ️ DO NOT enter domain that you DO NOT HAVE !")
+    bot.send_message(call.message.chat.id, "Isi subdomain nya: \n ℹ️ example: subdomain.saipul-bahri.my.id \n\n ℹ️ℹ️ DO NOT enter domain that you DO NOT HAVE !")
 
 @bot.message_handler(func=lambda message: user_states.get(message.from_user.id, {}).get('state') == 'waiting_for_subdomain_or_worker_name')
 def handle_subdomain_and_worker_name(message):
